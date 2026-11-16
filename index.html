@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b1120" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NSE AI Call Pro" />
+  <title>NSE AI Pro Stock Call Alert</title>
+  <link id="manifestLink" rel="manifest" />
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card: #111827;
+      --card-border: #1f2937;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --primary: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); padding: 14px; max-width: 660px; margin: 0 auto; padding-bottom: 60px; }
+    header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px 16px; background: var(--card); border: 1px solid var(--card-border); border-radius: 16px; margin-bottom: 14px; }
+    h1 { font-size: 1.15rem; font-weight: 800; }
+    .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); color: var(--accent); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge.warn { background: rgba(245, 158, 11, 0.15); color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
+    button { cursor: pointer; border: none; border-radius: 12px; padding: 11px 14px; font-weight: 700; font-size: 0.88rem; transition: transform 0.1s; }
+    button:active { transform: scale(0.97); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-accent { background: var(--accent); color: #052e16; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-ghost { background: #1f2937; color: var(--text); border: 1px solid #374151; }
+    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+    .card-title { font-size: 0.98rem; font-weight: 700; margin-bottom: 12px; color: #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+    .market-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (max-width: 480px) { .market-grid { grid-template-columns: 1fr; } }
+    .m-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; cursor: pointer; }
+    .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .m-sym { font-weight: 800; font-size: 0.95rem; color: #fff; }
+    .m-ltp { font-weight: 800; font-size: 1rem; color: var(--accent); }
+    .m-hl { font-size: 0.75rem; color: var(--muted); display: flex; justify-content: space-between; }
+    .m-ai { font-size: 0.72rem; color: #60a5fa; margin-top: 5px; font-weight: 600; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 520px) { .grid-2 { grid-template-columns: 1fr; } }
+    label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+    input, select { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid #374151; background: #0f172a; color: var(--text); font-size: 1rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .chip { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 6px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; }
+    .alert-item { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .alert-item.triggered { border-color: var(--danger); background: rgba(239, 68, 68, 0.12); }
+    .controls { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+    .ltp-input { flex: 1; padding: 8px 10px; font-size: 0.9rem; }
+    #callOverlay { position: fixed; inset: 0; background: radial-gradient(circle at top, #1e293b, #020617 85%); z-index: 9999; display: none; flex-direction: column; justify-content: space-between; align-items: center; padding: 56px 24px 48px; text-align: center; }
+    #callOverlay.active { display: flex; }
+    .pulse-ring { width: 112px; height: 112px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 2.6rem; animation: pulse 1.2s infinite; margin: 0 auto 20px; }
+    @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.65); } 70% { transform: scale(1.06); box-shadow: 0 0 0 26px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+    .call-actions { display: flex; gap: 16px; width: 100%; max-width: 380px; }
+    .call-btn { flex: 1; padding: 16px; border-radius: 999px; font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>📞 NSE AI Call Alert Pro</h1>
+      <div style="margin-top:4px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+        <span id="feedStatus" class="badge warn">Fetching Original NSE...</span>
+        <span id="audioStatus" class="badge warn">Tap Bell to Unlock Call</span>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button id="installAppBtn" class="btn-primary" style="display:none;" onclick="installPWA()">📲 Install App</button>
+      <button id="unlockAudioBtn" class="btn-accent" onclick="unlockAudio()">🔔 Activate Call</button>
+    </div>
+  </header>
+
+  <!-- Original Live Market Watchlist (High / Low + AI Trend) -->
+  <div class="card">
+    <div class="card-title">
+      <span>📊 Original NSE Live Prices (High / Low)</span>
+      <button class="btn-ghost" style="padding:6px 10px; font-size:0.78rem;" onclick="fetchAllOriginalPrices()">🔄 Sync Live</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <input type="text" id="addWatchInput" placeholder="Add NSE Symbol (e.g. TATAMOTORS, SBIN)" style="padding:8px 12px; font-size:0.9rem;" />
+      <button class="btn-primary" onclick="addWatchSymbol()">+ Add</button>
+    </div>
+    <div class="market-grid" id="marketGrid"></div>
+  </div>
+
+  <!-- Create Call Alert -->
+  <div class="card">
+    <div class="card-title">➕ Set Target Price Call Alert</div>
+    <div class="grid-2">
+      <div>
+        <label>Stock Symbol (NSE)</label>
+        <input type="text" id="symbolInput" placeholder="e.g. TATASTEEL" />
+      </div>
+      <div>
+        <label>Alert Trigger Condition</label>
+        <select id="conditionInput">
+          <option value="above">Price Rises Above (≥ ₹)</option>
+          <option value="below">Price Drops Below (≤ ₹)</option>
+        </select>
+      </div>
+      <div>
+        <label>Target Call Price (₹)</label>
+        <input type="number" id="targetInput" step="0.05" inputmode="decimal" placeholder="e.g. 155.50" />
+      </div>
+      <div>
+        <label>Current Original LTP (₹)</label>
+        <input type="number" id="ltpInput" step="0.05" inputmode="decimal" placeholder="Auto-synced" />
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <label>Trade Setup / Note</label>
+      <input type="text" id="noteInput" placeholder="e.g. Day High Breakout / Support Bounce" />
+    </div>
+    <button class="btn-primary" style="width:100%; margin-top:14px; padding:13px;" onclick="addAlert()">📞 Set Incoming Phone Call Alert</button>
+  </div>
+
+  <!-- Active Alerts -->
+  <div class="card">
+    <div class="card-title">📋 Active Call Alerts</div>
+    <div id="alertsList"></div>
+  </div>
+
+  <!-- Incoming Call Full-Screen Overlay -->
+  <div id="callOverlay">
+    <div>
+      <p style="color:#10b981; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; font-size:0.85rem;">Incoming NSE Market Call</p>
+      <div class="pulse-ring" style="margin-top:24px;">📲</div>
+      <h2 id="callStockTitle" style="font-size:2.4rem; font-weight:800; margin-bottom:8px;">TATASTEEL</h2>
+      <p id="callPriceDetail" style="font-size:1.25rem; color:#f8fafc; font-weight:700;">Hit ₹155.50</p>
+      <p id="callNoteDetail" style="margin-top:10px; color:#94a3b8; font-size:1rem; max-width:320px;"></p>
+    </div>
+    <div class="call-actions">
+      <button class="btn-ghost call-btn" onclick="snoozeAlert()">💤 Snooze 5m</button>
+      <button class="btn-danger call-btn" onclick="stopCallAlert()">📵 Answer / Stop</button>
+    </div>
+  </div>
+
+  <script>
+    // PWA Manifest for Life-long Home Screen Installation
+    const manifest = {
+      name: "NSE AI Pro Stock Call Alert",
+      short_name: "NSE Call Pro",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#0b1120",
+      theme_color: "#0b1120",
+      icons: [{
+        src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2310b981'/><text x='50' y='68' font-size='56' text-anchor='middle'>📞</text></svg>",
+        sizes: "512x512",
+        type: "image/svg+xml"
+      }]
+    };
+    document.getElementById('manifestLink').href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+
+    // Inline Service Worker registration so Chrome shows native "Install App" prompt
+    if ('serviceWorker' in navigator) {
+      const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => new Response('Offline'))));`;
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+    }
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installAppBtn').style.display = 'inline-block';
+    });
+
+    async function installPWA() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('installAppBtn').style.display = 'none';
+    }
+
+    let watchlist = JSON.parse(localStorage.getItem('nse_pro_watchlist') || '["RELIANCE","TATASTEEL","HDFCBANK","ICICIBANK","ITC","IDEA","FEDERALBNK","POWERGRID"]');
+    let liveQuotes = {};
+    let alerts = JSON.parse(localStorage.getItem('nse_pro_alerts_final') || '[]');
+    let audioCtx = null, ringInterval = null, vibeInterval = null, activeCallAlertId = null;
+
+    function unlockAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+      const b = document.getElementById('audioStatus');
+      b.textContent = 'Call Ringtone Active';
+      b.classList.remove('warn');
+      document.getElementById('unlockAudioBtn').textContent = '✅ Call Ready';
+    }
+
+    function playRingBurst() {
+      if (!audioCtx) unlockAudio();
+      const now = audioCtx.currentTime;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.5, now);
+      gain.connect(audioCtx.destination);
+      [440, 480].forEach(f => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now);
+        osc.connect(gain);
+        osc.start(now);
+        osc.stop(now + 1.1);
+      });
+    }
+
+    function startRingLoop() {
+      stopRingLoop();
+      if (navigator.vibrate) {
+        navigator.vibrate([700, 300, 700]);
+        vibeInterval = setInterval(() => navigator.vibrate([700, 300, 700]), 2200);
+      }
+      playRingBurst();
+      ringInterval = setInterval(playRingBurst, 2200);
+    }
+
+    function stopRingLoop() {
+      if (ringInterval) clearInterval(ringInterval);
+      if (vibeInterval) clearInterval(vibeInterval);
+      ringInterval = vibeInterval = null;
+      if (navigator.vibrate) navigator.vibrate(0);
+    }
+
+    function addWatchSymbol() {
+      const val = document.getElementById('addWatchInput').value.trim().toUpperCase();
+      if (val && !watchlist.includes(val)) {
+        watchlist.unshift(val);
+        localStorage.setItem('nse_pro_watchlist', JSON.stringify(watchlist));
+        document.getElementById('addWatchInput').value = '';
+        fetchAllOriginalPrices();
+      }
+    }
+
+    function selectStockForAlert(sym) {
+      document.getElementById('symbolInput').value = sym;
+      if (liveQuotes[sym]) {
+        document.getElementById('ltpInput').value = liveQuotes[sym].ltp;
+      }
+    }
+
+    async function fetchOriginalQuote(sym) {
+      const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}.NS?interval=1m&range=1d`;
+      const proxies = [
+        yahooUrl,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`
+      ];
+      for (const url of proxies) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const json = await res.json();
+          const meta = json?.chart?.result?.[0]?.meta;
+          if (meta && meta.regularMarketPrice) {
+            return {
+              ltp: Number(meta.regularMarketPrice),
+              high: Number(meta.regularMarketDayHigh || meta.regularMarketPrice),
+              low: Number(meta.regularMarketDayLow || meta.regularMarketPrice),
+              prevClose: Number(meta.chartPreviousClose || meta.regularMarketPrice)
+            };
+          }
+        } catch (e) {}
+      }
+      return null;
+    }
+
+    async function fetchAllOriginalPrices() {
+      const badge = document.getElementById('feedStatus');
+      badge.textContent = 'Syncing Original NSE...';
+      let successCount = 0;
+
+      const allSymbols = Array.from(new Set([...watchlist, ...alerts.map(a => a.symbol)]));
+      for (const sym of allSymbols) {
+        const q = await fetchOriginalQuote(sym);
+        if (q) {
+          liveQuotes[sym] = q;
+          successCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        badge.textContent = `Original NSE Live (${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})`;
+        badge.classList.remove('warn');
+      } else {
+        badge.textContent = 'Feed Waiting (Check Internet)';
+        badge.classList.add('warn');
+      }
+
+      renderMarketGrid();
+      for (const a of alerts) {
+        if (liveQuotes[a.symbol]) {
+          a.ltp = liveQuotes[a.symbol].ltp;
+          checkAlertTrigger(a);
+        }
+      }
+      saveAlerts();
+    }
+
+    function getAiSignal(q) {
+      if (!q) return 'Awaiting original market feed...';
+      const range = q.high - q.low;
+      const pos = range > 0 ? ((q.ltp - q.low) / range) * 100 : 50;
+      const chg = (((q.ltp - q.prevClose) / q.prevClose) * 100).toFixed(2);
+      const sign = chg >= 0 ? '+' : '';
+      if (pos >= 80) return `AI: Near Day High (${sign}${chg}%) • Breakout Zone`;
+      if (pos <= 20) return `AI: Near Day Low (${sign}${chg}%) • Support Test`;
+      return `AI: Mid-Range (${sign}${chg}%) • Range ₹${q.low.toFixed(1)}-₹${q.high.toFixed(1)}`;
+    }
+
+    function renderMarketGrid() {
+      const grid = document.getElementById('marketGrid');
+      grid.innerHTML = watchlist.map(sym => {
+        const q = liveQuotes[sym];
+        if (!q) {
+          return `<div class="m-card" onclick="selectStockForAlert('${sym}')">
+            <div class="m-top"><span class="m-sym">${sym}</span><span class="m-ltp" style="color:var(--muted);">Loading...</span></div>
+            <div class="m-hl"><span>High: --</span><span>Low: --</span></div>
+          </div>`;
+        }
+        return `<div class="m-card" onclick="selectStockForAlert('${sym}')">
+          <div class="m-top"><span class="m-sym">${sym}</span><span class="m-ltp">₹${q.ltp.toFixed(2)}</span></div>
+          <div class="m-hl"><span>Day High: <b>₹${q.high.toFixed(2)}</b></span><span>Day Low: <b>₹${q.low.toFixed(2)}</b></span></div>
+          <div class="m-ai">${getAiSignal(q)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function addAlert() {
+      unlockAudio();
+      const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+      const condition = document.getElementById('conditionInput').value;
+      const target = parseFloat(document.getElementById('targetInput').value);
+      const manualLtp = parseFloat(document.getElementById('ltpInput').value);
+      const note = document.getElementById('noteInput').value.trim();
+
+      if (!symbol || isNaN(target)) {
+        alert('Stock Symbol மற்றும் Target Price இரண்டையும் உள்ளிடவும்.');
+        return;
+      }
+
+      const currentLtp = liveQuotes[symbol] ? liveQuotes[symbol].ltp : (isNaN(manualLtp) ? null : manualLtp);
+      const newAlert = {
+        id: Date.now().toString(),
+        symbol,
+        condition,
+        target,
+        ltp: currentLtp,
+        note: note || 'Target price reached!',
+        triggered: false,
+        snoozedUntil: 0
+      };
+      alerts.unshift(newAlert);
+      document.getElementById('targetInput').value = '';
+      document.getElementById('noteInput').value = '';
+      checkAlertTrigger(newAlert);
+      saveAlerts();
+      if (!liveQuotes[symbol]) fetchAllOriginalPrices();
+    }
+
+    function checkAlertTrigger(item) {
+      if (item.ltp === null || item.triggered) return;
+      if (Date.now() < (item.snoozedUntil || 0)) return;
+      const hit = (item.condition === 'above' && item.ltp >= item.target) ||
+                  (item.condition === 'below' && item.ltp <= item.target);
+      if (hit) {
+        item.triggered = true;
+        triggerIncomingCall(item);
+      }
+    }
+
+    function triggerIncomingCall(item) {
+      activeCallAlertId = item.id;
+      document.getElementById('callStockTitle').textContent = item.symbol;
+      const sign = item.condition === 'above' ? '≥' : '≤';
+      document.getElementById('callPriceDetail').textContent = `₹${item.ltp.toFixed(2)} (Target ${sign} ₹${item.target.toFixed(2)})`;
+      document.getElementById('callNoteDetail').textContent = item.note;
+      document.getElementById('callOverlay').classList.add('active');
+      startRingLoop();
+    }
+
+    function stopCallAlert() {
+      stopRingLoop();
+      activeCallAlertId = null;
+      document.getElementById('callOverlay').classList.remove('active');
+      renderAlerts();
+    }
+
+    function snoozeAlert() {
+      if (activeCallAlertId) {
+        const item = alerts.find(a => a.id === activeCallAlertId);
+        if (item) {
+          item.triggered = false;
+          item.snoozedUntil = Date.now() + 5 * 60 * 1000;
+          saveAlerts();
+        }
+      }
+      stopCallAlert();
+    }
+
+    function deleteAlert(id) {
+      alerts = alerts.filter(a => a.id !== id);
+      saveAlerts();
+    }
+
+    function saveAlerts() {
+      localStorage.setItem('nse_pro_alerts_final', JSON.stringify(alerts));
+      renderAlerts();
+    }
+
+    function renderAlerts() {
+      const list = document.getElementById('alertsList');
+      if (!alerts.length) {
+        list.innerHTML = '<p style="color:var(--muted); font-size:0.86rem;">No alerts active. Tap any stock card above to set an incoming call alert.</p>';
+        return;
+      }
+      list.innerHTML = alerts.map(item => {
+        const sign = item.condition === 'above' ? '≥' : '≤';
+        const q = liveQuotes[item.symbol];
+        const hlInfo = q ? ` • H: ₹${q.high.toFixed(2)} / L: ₹${q.low.toFixed(2)}` : '';
+        return `<div class="alert-item ${item.triggered ? 'triggered' : ''}">
+          <div style="font-weight:800; font-size:1.05rem;">${item.symbol} <span style="color:var(--accent); font-size:0.85rem;">(${sign} ₹${item.target.toFixed(2)})</span></div>
+          <div style="font-size:0.8rem; color:var(--muted); margin-top:3px;">Original LTP: <b>${item.ltp ? '₹' + item.ltp.toFixed(2) : 'Syncing...'}</b>${hlInfo}</div>
+          <div style="font-size:0.8rem; color:#93c5fd; margin-top:2px;">${item.note}</div>
+          <div class="controls">
+            <button class="btn-ghost" onclick="triggerIncomingCall(${JSON.stringify(item).replace(/"/g, '&quot;')})">📞 Test Ring</button>
+            <button class="btn-danger" onclick="deleteAlert('${item.id}')">✕ Delete</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    renderMarketGrid();
+    renderAlerts();
+    fetchAllOriginalPrices();
+    setInterval(fetchAllOriginalPrices, 15000);
+  </script>
+</body>
+</html>
